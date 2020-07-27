@@ -17,7 +17,7 @@ ADD views views
 RUN npm install
 
 # Health
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
         CMD curl -s -f http://localhost:${APP_PORT}/health || exit 1
 
 # Expose application port
