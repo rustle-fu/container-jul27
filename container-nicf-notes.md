@@ -155,3 +155,19 @@ The source code should expose some interface for these to be read.
 
 Similar to above, image should have defined way to receive events from the
 runtime. For example, it should handle SIGTERM and SIGKILL.
+
+### Containers and persistence
+
+Containers are ephemeral; their data disappears when they are removed (or just
+stopped?). To persist data, we can:
+
+- Mount a local directory directly. We pass a command line option to docker run
+  that gives the container access to a local folder, mounted at some point on
+  the container. 
+- Define a Docker **volume** and mount it to the container (using Dockerfile).
+  Volumes allow for finer control over storage properties:
+  - local vs remote
+  - storage type (block/file/object)
+
+`docker inspect image` returns a lot of information about the image. This can be
+used to check things like volumes, entrypoint and so on. 

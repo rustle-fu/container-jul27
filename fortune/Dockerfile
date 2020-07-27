@@ -19,7 +19,7 @@ ADD views views
 # install dependencies
 RUN npm install
 
-# Add a way to check container health
+# Add a way to check container health through docker ps
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
         CMD curl -s -f http://localhost:${APP_PORT}/health || exit 1
 
