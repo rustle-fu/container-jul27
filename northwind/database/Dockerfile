@@ -6,6 +6,10 @@ ENV MYSQL_ROOT_PASSWORD=changeit MYSQL_DATABASE=northwind MYSQL_PORT=3306
 ADD 0-northwind-default-current-timestamp.sql /docker-entrypoint-initdb.d
 ADD 1-northwind-data.sql /docker-entrypoint-initdb.d
 
+## Healthcheck
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+        CMD mysqladmin ping -uroot -p${MYSQL_ROOT_PASSWORD} || exit 1
+
 EXPOSE ${MYSQL_PORT}
 VOLUME /var/lib/mysql
 
