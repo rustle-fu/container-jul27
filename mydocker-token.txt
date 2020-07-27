@@ -1,0 +1,13 @@
+f8de851839f3069cf61f384fd183a0c34fdad058b4d471c79c6353fe0f89d0d1
+
+DigitalOcean specs:
+size: s-1vcpu-2gb (use `doctl` to find sizes offered by DigitalOcean)
+OS: ubuntu-20-04-x64
+Region: sgp1
+
+For cmd: (^ for cmd, ` for ps, \ for bash)
+docker-machine create --driver digitalocean^
+--digitalocean-access-token f8de851839f3069cf61f384fd183a0c34fdad058b4d471c79c6353fe0f89d0d1^
+--digitalocean-image ubuntu-20-04-x64^
+--digitalocean-size s-1vcpu-2gb^
+--digitalocean-region sgp1 mymachine
