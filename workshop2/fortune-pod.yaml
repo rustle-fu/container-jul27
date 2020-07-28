@@ -1,0 +1,15 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: fortune-pod
+  labels:
+    app: fortune
+    version: v1
+spec:
+  containers: # describe the containers in the pod
+  - name: fortune-container
+    image: chukmunnlee/fortune:v1
+    imagePullPolicy: IfNotPresent
+    ports: # analogous to EXPOSE
+    - containerPort: 3000
