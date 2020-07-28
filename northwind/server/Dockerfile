@@ -2,7 +2,8 @@
 FROM node:14
 
 # Variables
-ENV DB_USER=root DB_PASSWORD=changeit APP_PORT=3000 APP_DIR=/app
+ENV APP_PORT=3000 APP_DIR=/app
+ENV DB_USER=root DB_PASSWORD=changeit
 
 WORKDIR ${APP_DIR}
 
