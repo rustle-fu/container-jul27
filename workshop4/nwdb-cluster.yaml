@@ -1,0 +1,19 @@
+---
+# Custom resource provided by mysql-operator
+apiVersion: mysql.presslabs.org/v1alpha1
+kind: MysqlCluster
+metadata:
+  name: nwdb-cluster
+  labels:
+    app: northwind
+
+spec:
+  replicas: 3
+  secretName: mysql-secret
+  persistentVolumeClaims:
+    accessModes:
+    - ReadWriteOnce # Relational DB, only one should r/w at a time
+    resources:
+      requests:
+        storage: 1Gi
+    storageClassName: do-block-storage

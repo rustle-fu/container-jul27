@@ -221,6 +221,14 @@ Use cases:
 - Graceful upgrade/patching
 - Automatic scaling and load balancing
 
+#### Logical organisation
+
+A Kubernetes cluster is logically composed of objects called "Resources". These
+resources are organised into *namespaces*, which partition the cluster.
+Namespaces are good for handling "roles" - there is a default namespace called
+`kube-system` that handles administration work (deleting it will break the
+cluster). 
+
 #### Architecture
 
 Master-worker architecture. Master contains only control plane, no workload
@@ -334,6 +342,9 @@ You can get the YAML that describes a Chart Kubernetes application using
 You can also supply a YAML file to a chart to provide values such as DB names.
 
 `spec.template.spec.
+
+When we use a chart (installing nginx-ingress, Operators) it is good practice to
+keep it in a namespace just for it. 
 
 ### Kubernetes Rolling Updates
 
@@ -457,12 +468,138 @@ Lensapp Lens (native), VMWare octant (web based). Alternatives to DO dashboard.
 
 ### Summary
 
+- Health Checks (readiness/liveness)
+- Helm package manager
 - Storage
   - Volumes
   - Persistent volumes
   - Persistent volume claims
 - Networking
-  - Ingress (stable/nginx-ingress)
+  - Ingress (stable/nginx-ingress, Kong)
 - Scaling
   - Requesting and limiting resources of Deployments
   - Horizontal Pod Autoscaler
+
+## Day 4
+
+### Operators
+
+> See OperatorHub.
+
+Operators can be installed via `helm`. They add custom resource types to the
+cluster. They contain the expert knowledge for deploying applications, allowing
+a declarative approach to configuring the application.
+
+Operators thus simplify the deployment process. The are configured by Custom
+Resource Configurations (CRD).
+
+> Recall we helm installed a chart and supplied config YAML. Every time we
+> deploy we would need to create a new release for (redo) it.
+> Install Operator once so it can install charts for you.
+
+Consider the presslabs mysql-operator Operator. It adds the MysqlCluster custom
+resource that creates pods with 4 containers: mysql, sidecar, metrics-exporter,
+and pt-heartbeat. Just by declaring one resource, we have a much more thorough
+deployment.
+
+### Stateful Applications
+
+The typical deployment:
+- Service entrypoint
+- Ephemeral pods
+  
+is acceptable for stateless applications. However, the typical clustered
+application has state, and master-servant relations between pod analogues. For
+example, mysql has a master node and many read-only copies. They have unequal
+roles, and the copies need to know who the master is. 
+
+To describe this causal relationship, we can use a Statefulset. The MySQL
+operator includes a statefulset. 
+
+```
+# Typical FQDN
+servicename.namespacename.svc.cluster.local
+
+# Headless service, managed by statefulset
+podname.servicename.namespacename.svc.cluster.local
+```
+
+### Selectors and Labels
+
+Certain resource specify Selectors. The selector selects resources which match
+all of its defined labels (though the resource may have more labels of its own).
+
+### DO Spaces
+
+An S3 compatible object store designed to store and serve a large amount of
+assets. 
+
+### Istio
+
+This is just a surface level lesson; Istio is much deeper.
+
+Modern applications/services will often require certain infrastructure features.
+Things like CORS, metering, authentication throttling and so on. There are 
+
+- Horizontal features: Common to all services, transparent to the service.
+  - Logging
+  - Authentication
+  - CORS
+  - Fault management
+  - Throttling
+
+Horizontal features can be implemented on the load-balancer/ingress.
+
+An abstraction of these common services can be implemented as a sidecar - a
+container that is injected into each pod and proxies the communication across
+the pod boundary. 
+
+Istio is a **service mesh platform**. It can provide an API gateway (more
+complex than Nginx) and **Envoy**-based sidecar proxies. It installs to the
+`istio-system` namespace.
+
+**Pilot** is part of Istio's control plane and pushes policy to the sidecar
+proxies. 
+
+Istio has several predefined profiles to help you get started. 
+
+> `istioctl install --set profile=demo`
+
+#### Sidecar feature example
+
+Suppose a request comes in to Service 1 and is passed to Service 2, which has
+failed. The sidecar will notice Service 2 is down and subsequent requests fail
+immediately (circuit breaker).
+
+Sidecars can be injected automatically on a per-namespace basis. This is enabled
+by default, and may not be ideal for your application. You can opt-out via
+annotation on a pod. Automatic injection requires a label on the namespace
+
+> Recall that this injection is done by a mutating Admission Controller. 
+
+Manual injection is aided by `istioctl kube-inject`. This outputs an altered
+version of the supplied YAML file by injecting the sidecar to Deployments and
+Pods declared in the YAML.
+
+### Multiple Ingresses
+
+When you have more than 1 ingress, you need to specify which ingress to which
+you deploy an ingress resource.
+
+- Annotations (deprecated recently, 1.17)
+- ingressClassName
+
+### Dashboards
+
+Istio makes it easy to monitor via web dashboards.
+
+> `istioctldash grafana | prometheus| jaeger | kiali`
+
+- Jaeger: request traces
+- Kiali: Kubernetes cluster info
+
+### Summary
+
+- Operators: Ready made, configurable deployments
+- Istio: service mesh
+  - Sidecars

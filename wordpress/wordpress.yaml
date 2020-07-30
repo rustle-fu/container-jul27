@@ -1,0 +1,99 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wp-cm
+  labels:
+    app: wordpress
+data:
+  WORDPRESS_DB_USER: root
+  WORDPRESS_DB_HOST: wp-db-cluster-mysql.wp.svc.cluster.local
+  # WORDPRESS_DB_NAME: wordpress
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wp-deploy
+  labels:
+    app: wordpress
+
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: wordpress
+  template:
+    metadata:
+      name: wp-po
+      labels:
+        app: wordpress
+    spec:
+      volumes:
+      - name: wp-vol
+        persistentVolumeClaim:
+          claimName: wp-pvc
+
+      containers:
+      - name: wp-con
+        image: wordpress:latest
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+          - name: wp-vol
+            mountPath: /var/www/html
+        envFrom:
+        - configMapRef:
+            name: wp-cm
+        env:
+        - name: WORDPRESS_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: wp-db-secret
+              key: ROOT_PASSWORD
+        # resources:
+        #   limits:
+        #     memory: "128Mi"
+        #     cpu: "500m"
+        ports:
+        - name: wp-port
+          containerPort: 80
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wp-svc
+spec:
+  type: ClusterIP
+  selector:
+    app: wordpress
+  ports:
+  - name: wp-svc-port
+    port: 80
+    targetPort: wp-port
+
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: wp-ing
+  labels:
+    app: wordpress
+  annotations:
+    nginx.ingress.kubernetes.io/limit-rps: "5"
+
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: acme.167.172.5.47.nip.io #nginx-ingress location
+    http:
+      paths:
+      - path: /
+        backend: # where to send services that match the path
+          serviceName: wp-svc
+          servicePort: wp-svc-port

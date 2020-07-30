@@ -1,0 +1,30 @@
+---
+# Secret: Database connection variables
+apiVersion: v1
+kind: Secret
+metadata:
+  name: wp-db-secret
+  labels:
+    app: wordpress
+
+data:
+  ROOT_PASSWORD: Y2hhbmdlaXQ=
+
+---
+apiVersion: mysql.presslabs.org/v1alpha1
+kind: MysqlCluster
+metadata:
+  name: wp-db-cluster
+  labels:
+    app: wordpress
+
+spec:
+  replicas: 3
+  secretName: wp-db-secret
+  persistentVolumeClaims:
+    accessModes:
+    - ReadWriteOnce # Relational DB, only one should r/w at a time
+    resources:
+      requests:
+        storage: 1Gi
+    storageClassName: do-block-storage
