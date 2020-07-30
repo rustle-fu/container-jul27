@@ -1,0 +1,12 @@
+# This is passed to the helm install nginx-ingress command. Sets variables for it.
+
+controller:
+  publishService:
+    enabled: true
+
+defaultBackend:
+  enabled: true
+  image:
+    repository: chukmunnlee/ingress_default_backend
+    tag: v1
+  port: 3000

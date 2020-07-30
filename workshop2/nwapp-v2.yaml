@@ -1,0 +1,39 @@
+---
+# Deployment: App servers
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nwapp-deploy
+  labels:
+    app: northwind
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nwapp-pod
+  template:
+    metadata:
+      name: nwapp-pod
+      labels:
+        app: nwapp-pod
+    spec:
+      containers:
+      - name: nwapp-container
+        image: stackupiss/northwind-app:v2
+        imagePullPolicy: IfNotPresent
+        envFrom:
+        - configMapRef:
+            name: nwapp-cm
+        env:
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: nw-secret
+              key: MYSQL_ROOT_PASSWORD
+        - name: INSTANCE_IP_ADDRESS
+          valueFrom: 
+            fieldRef: 
+              fieldPath: status.podIP
+        ports:
+        - name: nwapp-port
+          containerPort: 3000

@@ -316,3 +316,153 @@ that a cluster will have many kinds of Deployment, not all should be exposed.
 - kubectl YAML API
   - Variable injection and referencing
   - YAML resources are assessed in order
+
+## Day 3
+
+### Helm
+
+`Helm` is a package manager that can ease deployment of Kubernetes applications.
+Without it, we would have a mess of YAML files. Helm packages are known as
+*Charts*. Charts will be on Helm Hub.
+
+Think of the steps we took to build a containerised application using a
+Kubernetes cluster. Those steps can be automated by `helm`.
+
+You can get the YAML that describes a Chart Kubernetes application using 
+`helm template`. 
+
+You can also supply a YAML file to a chart to provide values such as DB names.
+
+`spec.template.spec.
+
+### Kubernetes Rolling Updates
+
+Downtime free updating! Gradually replaces old pods (when they aren't serving
+anything). A forced deployment would be `recreate`. You can specify the number
+of new version pods brought in at a time pods `maxSurge` and the number of old
+pods removed at a time `maxUnavailable`. These can also be set in terms of
+percentage. 
+
+An update is specified in the Deployment resource, under `spec.strategy`.
+
+### Retrieving YAML from a live resource
+
+The API server will save a copy of each Resource's YAML. To get it back use
+
+```
+kubectl get <resource> -o yaml
+```
+
+The one from the server will have other fields populated by default values; it
+is a full spec.
+
+### Version Management
+
+```
+kubectl rollout history <deployment> -n ns
+kubectl rollout undo <deployment> -n ns --to-revision=<revision number>
+```
+
+### Health Checks
+
+- Readiness
+- Liveness
+
+Specified in containers.readinessProbe and containers.livenessProbe.
+
+### Storage and Kubernetes
+
+Kubernetes Volumes are tied to Pods and thus ephemeral unlike Docker volumes.
+They are specified in the pod's YAML or injected via ConfigMap
+
+For persistent storage, it can be set manually (static) or dynamically.
+Information about the storage policy is held in the *storage class*.
+
+*Persistent Volume Claims* are resources used to link pod volumes to persistent
+storage. 
+
+Persistent volumes are seen as Kubernetes Volumes by the pod, but don't
+disappear when the pod dies. If multiple pods talk to a persistent volume, it
+must be able to handle multiple writes. 
+
+> Declaring a PVC will result in a PV being created to match it (conditional on
+> available resources).
+
+### Admission Controllers
+
+Control the assignment of resources. Deployments send requests here.
+
+- Validating: checks the deployment and enforces policy
+- Mutating: Changes the deployment (istio sidecar)
+
+Admission controllers can read *annotations* which provide additional
+information for requesting custom resources. 
+
+`initContainers` are used Containers that are started before the others and
+clean up the environment. They may be necessary to clean persistent volumes.
+These initial containers must exit; otherwise the rest will not start up.
+
+### Ingress
+
+Load balancers are typically overkill, being provisioned by the underlying cloud
+platform. We use an ingress, which is simpler and cheaper than a load balancer.
+An ingress is a Kubernetes resource (not a Service) Nginx Ingress is a popular
+Ingress Controller. 
+
+We can set up an Ingress (set of rules) in and point it to a ClusterIP service. 
+
+> source: https://stackoverflow.com/questions/45079988/ingress-vs-load-balancer
+
+Load Balancer: A kubernetes LoadBalancer service is a service that points to
+**external** load balancers that are NOT in your kubernetes cluster, but exist
+elsewhere. They can work with your pods, assuming that your pods are externally
+routable. Google and AWS provide this capability natively. In terms of Amazon,
+this maps directly with ELB and kubernetes when running in AWS can automatically
+provision and configure an ELB instance for each LoadBalancer service deployed.
+
+Ingress: An ingress is really just a set of rules to pass to a controller that
+is listening for them. You can deploy a bunch of ingress rules, but nothing will
+happen unless you have a controller that can process them. A LoadBalancer
+service could listen for ingress rules, if it is configured to do so.
+
+You can also create a NodePort service, which has an externally routable IP
+outside the cluster, but points to a pod that exists within your cluster. This
+could be an Ingress Controller.
+
+An Ingress Controller is simply a pod that is configured to interpret ingress
+rules.
+
+> We can use nip.io to fake domain names for testing. You can't use the IP
+> directly because the request will have a different form (no host field) and
+> the ingress will fail to understand. 
+
+Routing can be complex depending on how your web app is organised. For more
+details on how to arrange the ingress, check the notes.
+
+### Scaling
+
+Before we choose to scale, we should be measuring the cluster's performance. We
+use Kubernetes metrics server. Once it is deployed it allows extra commands on
+kubectl that monitor resource usage (`kubectl top`).
+
+Using these gathered metrics, we can configure *automatic* scaling. We set up a
+Horizontal Pod Autoscaler. It manages Deployments and overrrides the `replicas`
+field. It does this by manipulating the Replica Set. 
+
+### Tools
+
+#### Cluster Monitoring Tools
+
+Lensapp Lens (native), VMWare octant (web based). Alternatives to DO dashboard.
+
+### Summary
+
+- Storage
+  - Volumes
+  - Persistent volumes
+  - Persistent volume claims
+- Networking
+  - Ingress (stable/nginx-ingress)
+- Scaling
+  - Requesting and limiting resources of Deployments
+  - Horizontal Pod Autoscaler
